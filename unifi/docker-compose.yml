@@ -4,8 +4,9 @@ services:
     image: mongo:3.4
     container_name: mongo
     network_mode: host
-    restart: always
+    restart: unless-stopped
     platform: linux/arm64/v8
+    privileged: true
     volumes:
       - /opt/mongodb:/data/db
   controller:
@@ -15,7 +16,7 @@ services:
       - mongo
     init: true
     network_mode: host
-    restart: always
+    restart: unless-stopped
     volumes:
       - /opt/unifi:/unifi/
     environment:

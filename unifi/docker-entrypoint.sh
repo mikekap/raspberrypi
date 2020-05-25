@@ -41,6 +41,8 @@ LOGDIR=${LOGDIR:-/usr/lib/unifi/logs}
 CERTDIR=${CERTDIR:-/unifi/cert}
 RUNDIR=${RUNDIR:-/var/run/unifi}
 
+ln -sf $DATADIR $DATALINK
+
 DIRS="${RUNDIR} ${LOGDIR} ${DATADIR} ${BASEDIR}"
 
 JVM_MAX_HEAP_SIZE=${JVM_MAX_HEAP_SIZE:-1024M}
