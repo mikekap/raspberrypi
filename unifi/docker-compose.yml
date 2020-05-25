@@ -1,9 +1,9 @@
-version: '2.2'
+version: '2.4'
 services:
   mongo:
     image: mongo:3.4
     container_name: mongo
-    net: host
+    network_mode: host
     restart: always
     platform: linux/arm64/v8
     volumes:
@@ -14,7 +14,7 @@ services:
     depends_on:
       - mongo
     init: true
-    net: host
+    network_mode: host
     restart: always
     volumes:
       - /opt/unifi:/unifi/
