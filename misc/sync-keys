@@ -1,0 +1,7 @@
+#!/bin/bash
+set -eo pipefail
+
+curl -s -o /home/pi/.ssh/authorized_keys.new https://github.com/mikekap.keys >/dev/null
+mv /home/pi/.ssh/authorized_keys{.new,}
+chown -R pi:pi /home/pi/.ssh
+
