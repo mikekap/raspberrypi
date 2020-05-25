@@ -1,0 +1,12 @@
+version: '3'
+services:
+  homeassistant:
+    container_name: home-assistant
+    image: homeassistant/home-assistant:stable
+    volumes:
+      - /opt/home-assistant:/config
+    environment:
+      - TZ=America/Los_Angeles
+    restart: unless-stopped
+    network_mode: host
+
