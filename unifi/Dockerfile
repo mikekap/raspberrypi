@@ -16,3 +16,4 @@ RUN echo 'deb https://www.ui.com/downloads/unifi/debian stable ubiquiti' >> /etc
 ADD docker-entrypoint.sh /
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["unifi"]
