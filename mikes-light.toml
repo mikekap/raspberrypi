@@ -1,0 +1,14 @@
+[[protocols]]
+name = "mikes_light"
+protocol = "nec"
+[protocols.scancodes]
+0x404 = "KEY_POWER" # Power
+0x405 = "KEY_POWER2" # Nightlight
+0x409 = "KEY_CLEAR" # 100% bright
+0x410 = "KEY_YELLOW" # 100% yellow
+0x402 = "KEY_BRIGHTNESSUP"
+0x406 = "KEY_BRIGHTNESSDOWN"
+0x401 = "KEY_BRIGHTNESS_MAX"
+0x407 = "KEY_CHANNELUP"  # color whiter
+0x403 = "KEY_CHANNELDOWN"  # color yellower
+
