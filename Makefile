@@ -8,4 +8,4 @@ unifi: base
 	cd unifi && docker build -t rpi-unifi .
 
 light-control:
-	cd light-control && docker built -t rpi-light-control
+	cd light-control && docker build -t rpi-light-control .
