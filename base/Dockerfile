@@ -10,4 +10,5 @@ RUN apt-get update && \
     wget -O /etc/apt/trusted.gpg.d/unifi-repo.gpg https://dl.ui.com/unifi/unifi-repo.gpg && \
     apt update
 
-RUN apt install -y --no-install-recommends adoptopenjdk-14-hotspot python3
+RUN apt install -y --no-install-recommends adoptopenjdk-14-hotspot python3 python3-dev python3-pip build-essential
+RUN python3 -m pip install pip setuptools -U
