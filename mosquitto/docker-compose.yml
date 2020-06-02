@@ -1,6 +1,6 @@
 version: '3'
 services:
-  homeassistant:
+  mosquitto:
     container_name: mosquitto
     image: eclipse-mosquitto:1.6
     volumes:
