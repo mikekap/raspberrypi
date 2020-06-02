@@ -1,6 +1,6 @@
 FROM rpi-base
 
-RUN apt update && apt install -y v4l-utils && rm -rf /var/lib/apt/lists/*
+RUN apt install -y v4l-utils
 
 ADD requirements.txt /
 RUN pip install -r requirements.txt

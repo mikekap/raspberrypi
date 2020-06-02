@@ -6,6 +6,8 @@ RUN apt-get update && \
     apt install -y --no-install-recommends wget gnupg ca-certificates && \
     echo 'deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ eoan main' >> /etc/apt/sources.list && \
     (wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -) && \
-    apt update && \
-    apt install -y --no-install-recommends adoptopenjdk-14-hotspot && \
-    rm -rf /var/lib/apt/lists/*
+    echo 'deb https://www.ui.com/downloads/unifi/debian stable ubiquiti' >> /etc/apt/sources.list && \
+    wget -O /etc/apt/trusted.gpg.d/unifi-repo.gpg https://dl.ui.com/unifi/unifi-repo.gpg && \
+    apt update
+
+RUN apt install -y --no-install-recommends adoptopenjdk-14-hotspot python3
