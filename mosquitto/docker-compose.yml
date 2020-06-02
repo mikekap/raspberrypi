@@ -1,0 +1,10 @@
+version: '3'
+services:
+  homeassistant:
+    container_name: mosquitto
+    image: eclipse-mosquitto:1.6
+    volumes:
+      - /opt/mosquitto/config:/mosquitto/config
+      - /opt/mosquitto/data:/mosquitto/data
+    restart: unless-stopped
+    network_mode: host
