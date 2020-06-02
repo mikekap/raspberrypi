@@ -1,16 +1,17 @@
 import paho.mqtt.client as mqtt
 import os
 
-# The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
 
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
-    client.subscribe("$SYS/#")
+    client.subscribe("home/living/light/#")
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
+    if msg.topic.endswith('/toggle'):
+        print('power',str(msg.payload))
+        subprocess.check_call("ir-ctl -S nec:0x404", shell=True)
+
     print(msg.topic+" "+str(msg.payload))
 
 client = mqtt.Client()
