@@ -12,6 +12,9 @@ def on_message(client, userdata, msg):
     if msg.topic.endswith('/toggle'):
         print('power',str(msg.payload))
         subprocess.check_call("ir-ctl -S nec:0x404", shell=True)
+    if msg.topic.endswith('/toggle-night'):
+        print('power-night',str(msg.payload))
+        subprocess.check_call("ir-ctl -S nec:0x405", shell=True)
 
     print(msg.topic+" "+str(msg.payload))
 
