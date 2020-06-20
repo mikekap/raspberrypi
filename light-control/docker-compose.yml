@@ -3,7 +3,6 @@ services:
   light-control:
     image: rpi-light-control
     container_name: light-control
-    init: true
     restart: unless-stopped
     devices:
      - "/dev/lirc0:/dev/lirc0"
