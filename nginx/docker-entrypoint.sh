@@ -27,7 +27,8 @@ run_certbot() {
 get_certificate "home.kaplinskiy.com" "mike.kaplinskiy@gmail.com"
 }
 
-if [ ! -f "/etc/letsencrypt/live/home.kaplinskiy.com/privkey.pem" ]; do
+if [ ! -f "/etc/letsencrypt/live/home.kaplinskiy.com/privkey.pem" ]; then
+mkdir -p /etc/letsencrypt/live/home.kaplinskiy.com/
 cp /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/letsencrypt/live/home.kaplinskiy.com/fullchain.pem
 cp /etc/ssl/private/ssl-cert-snakeoil.key /etc/letsencrypt/live/home.kaplinskiy.com/privkey.pem
 fi
@@ -45,7 +46,8 @@ while [ true ]; do
 
     # Run certbot, tell nginx to reload its config
     echo "Run certbot"
-    run_certbot || echo "Certbot failed; ignoring"
+    sleep 5;
+    certbot renew || echo "Certbot failed; ignoring"
     kill -HUP $NGINX_PID
 
     # Sleep for 1 week

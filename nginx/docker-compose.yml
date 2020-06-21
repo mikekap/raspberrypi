@@ -3,9 +3,11 @@ version: '3'
 services:
   nginx:
     image: rpi-nginx
+    container_name: nginx
     restart: unless-stopped
+    network_mode: host
     volumes:
-      - /opt/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /opt/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
       - /opt/nginx/certbot:/etc/letsencrypt
       - /var/www/html:/var/www/html:ro
     ports:
