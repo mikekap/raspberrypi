@@ -27,10 +27,10 @@ run_certbot() {
 get_certificate "home.kaplinskiy.com" "mike.kaplinskiy@gmail.com"
 }
 
-if [ ! -f "/etc/letsencrypt/live/home.kaplinskiy.com/privkey.pem" ]; then
-mkdir -p /etc/letsencrypt/live/home.kaplinskiy.com/
-cp /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/letsencrypt/live/home.kaplinskiy.com/fullchain.pem
-cp /etc/ssl/private/ssl-cert-snakeoil.key /etc/letsencrypt/live/home.kaplinskiy.com/privkey.pem
+if [ ! -f "/etc/letsencrypt/live/home.kaplinskiy.com-0002/privkey.pem" ]; then
+mkdir -p /etc/letsencrypt/live/home.kaplinskiy.com-0002/
+cp /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/letsencrypt/live/home.kaplinskiy.com-0002/fullchain.pem
+cp /etc/ssl/private/ssl-cert-snakeoil.key /etc/letsencrypt/live/home.kaplinskiy.com-0002/privkey.pem
 fi
 
 nginx &

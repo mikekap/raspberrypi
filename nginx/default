@@ -24,8 +24,8 @@ server {
         listen 443 default_server ssl http2 proxy_protocol;
         server_name home.kaplinskiy.com;
 
-        ssl_certificate     /etc/letsencrypt/live/home.kaplinskiy.com/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/home.kaplinskiy.com/privkey.pem;
+        ssl_certificate     /etc/letsencrypt/live/home.kaplinskiy.com-0002/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/home.kaplinskiy.com-0002/privkey.pem;
 
 	# SSL configuration
 	#
