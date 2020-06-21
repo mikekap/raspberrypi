@@ -48,6 +48,24 @@ server {
                 proxy_pass http://localhost:1337;
         }
 
+        location '/api/alexa/smart_home' {
+                proxy_pass 'http://raspberrypi:8123';
+                proxy_set_header   X-Forwarded-Proto  $scheme;
+                proxy_set_header X-Forwarded-For $proxy_protocol_addr;
+        }
+
+        location ~ ^/auth/.* {
+                proxy_pass 'http://raspberrypi:8123';
+                proxy_set_header   X-Forwarded-Proto  $scheme;
+                proxy_set_header X-Forwarded-For $proxy_protocol_addr;
+        }
+
+        location ~ ^/frontend_latest/.* {
+                proxy_pass 'http://raspberrypi:8123';
+                proxy_set_header   X-Forwarded-Proto  $scheme;
+                proxy_set_header X-Forwarded-For $proxy_protocol_addr;
+        }
+
 	root /var/www/html;
 
 	# Add index.php to the list if you are using PHP
