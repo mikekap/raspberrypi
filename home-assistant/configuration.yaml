@@ -1,0 +1,26 @@
+
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+switch:
+ - platform: mqtt
+   name: "Living Room Light"
+   command_topic: "home/living/light/toggle"
+ - platform: mqtt
+   name: "Living Room Nightlight"
+   command_topic: "home/living/light/toggle-night"
+ - platform: mqtt
+   name: "Living Room TV"
+   command_topic: "home/living/tv/toggle"
+
+alexa:
+  smart_home:
