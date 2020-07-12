@@ -1,0 +1,5 @@
+[[protocols]]
+name = "mikes_tv"
+protocol = "necx"
+[protocols.scancodes]
+0x70702 = "KEY_POWER"
