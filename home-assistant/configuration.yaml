@@ -22,5 +22,9 @@ switch:
    name: "Living Room TV"
    command_topic: "home/living/tv/toggle"
 
+mqtt:
+  discovery: true
+  broker: raspberrypi
+
 alexa:
   smart_home:
