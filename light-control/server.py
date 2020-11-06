@@ -68,7 +68,7 @@ class TvController(threading.Thread):
         self.last_ir_send_timestamp = time.time()
 
     def waiting_for_ir_to_complete(self):
-        return self.last_control_message_timestamp + self.max_repeat_time < time.time() and self.last_ping_status != self.last_control_message
+        return self.last_control_message_timestamp + self.max_repeat_time >= time.time() and self.last_ping_status != self.last_control_message
 
     def maybe_resend_control_message(self):
         delay = self.on_repeat_delay if self.last_control_message else self.off_repeat_delay
