@@ -51,7 +51,7 @@ class TvController(threading.Thread):
 
         while True:
             start = time.time()
-            retcode = subprocess.call(["ping", "-W", "2", "-c", "1", "samsungtv"])
+            retcode = subprocess.call(["ping", "-W", "2", "-c", "1", "samsungtv"], stdout=subprocess.DEVNULL)
             try:
                 if retcode:
                     self.q.put_nowait(TvPingStatus(False))
