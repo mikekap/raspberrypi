@@ -37,7 +37,7 @@ class TvController(threading.Thread):
         self.last_ping_status = False
         self.last_ir_send_timestamp = 0.0
 
-        self.on_repeat_delay = 10
+        self.on_repeat_delay = 15
         self.off_repeat_delay = 1
         self.max_repeat_time = 60
 
