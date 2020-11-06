@@ -1,6 +1,6 @@
 FROM rpi-base
 
-RUN apt install -y v4l-utils
+RUN apt install -y v4l-utils iputils-ping
 
 ADD requirements.txt /
 RUN python3 -m pip install -r requirements.txt

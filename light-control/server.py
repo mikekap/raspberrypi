@@ -1,12 +1,108 @@
+import functools
+from typing import Optional
+
 import paho.mqtt.client as mqtt
+import collections
 import os
 import subprocess
+import queue
+import sys
+import traceback
+import threading
+import time
+
+
+def thread_loop(fn):
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        try:
+            while True:
+                fn(*args, **kwargs)
+        except:
+            traceback.print_exc()
+            sys.exit(-1)
+    return wrapped
+
+
+TvPingStatus = collections.namedtuple('TvPingStatus', "up")
+TvCommand = collections.namedtuple('TvCommand', "up")
+
+class TvController(threading.Thread):
+    def __init__(self, mqtt_client: mqtt.Client):
+        super().__init__(daemon=True)
+        self.q = queue.Queue(100)
+        self.mqtt_client = mqtt_client
+        self.last_control_message = False
+        self.last_control_message_timestamp = 0.0
+        self.last_ir_status = False
+        self.last_ir_send_timestamp = 0.0
+
+        self.on_repeat_delay = 10
+        self.off_repeat_delay = 1
+        self.max_repeat_time = 60
+
+    def start(self):
+        super(TvController, self).start()
+        threading.Thread(target=self.tv_ping_loop, daemon=True).start()
+
+    @thread_loop
+    def tv_ping_loop(self):
+        with subprocess.Popen(["ping", "-i", "2", "samsungtv"], stdout=subprocess.PIPE, encoding='utf-8') as proc:
+            proc.poll()
+            if proc.returncode is not None:
+                print('Ping crashed, restarting...')
+                return
+            line = proc.stdout.readline()
+            try:
+                if 'bytes from samsungtv' in line:
+                    self.q.put_nowait(TvPingStatus(True))
+                else:
+                    self.q.put_nowait(TvPingStatus(False))
+            except queue.Full:
+                pass
+
+    def send_control(self):
+        subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
+        self.last_ir_send_timestamp = time.time()
+
+    def waiting_for_ir_to_complete(self):
+        return self.last_control_message_timestamp + self.max_repeat_time < time.time() and self.last_ir_status != self.last_control_message
+
+    def maybe_resend_control_message(self):
+        delay = self.on_repeat_delay if self.last_control_message else self.off_repeat_delay
+        if self.last_ir_send_timestamp + delay >= time.time():
+            self.send_control()
+
+    @thread_loop
+    def run(self):
+        while True:
+            item = self.q.get()
+
+            if isinstance(item, TvCommand):
+                self.last_control_message = item.up
+                self.last_control_message_timestamp = time.time()
+            elif isinstance(item, TvPingStatus):
+                self.last_ir_status = item.up
+
+                if self.waiting_for_ir_to_complete():
+                    self.maybe_resend_control_message()
+                else:
+                    self.mqtt_client.publish('home/living/tv/status', b'ON' if self.last_ir_status else b'OFF')
+
+            self.q.task_done()
+
+    def mqtt_message(self, contents):
+        self.q.put(TvCommand(True if b'ON' in contents else False))
+
+
+TV_CONTROLLER : Optional[TvController] = None
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
 
     client.subscribe("home/living/light/#")
     client.subscribe("home/living/tv/#")
+
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
@@ -20,18 +116,28 @@ def on_message(client, userdata, msg):
     elif msg.topic.startswith('home/living/tv'):
         if msg.topic.endswith('/toggle'):
             print('power-tv', str(msg.payload))
-            subprocess.check_call('ir-ctl -S necx:0x70702', shell=True)
+            TV_CONTROLLER.mqtt_message(msg.payload)
 
     print(msg.topic+" "+str(msg.payload))
 
-client = mqtt.Client()
-client.on_connect = on_connect
-client.on_message = on_message
 
-client.connect(os.environ.get('MQTT_HOST', "raspberrypi"), 1883, 60)
+def main():
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
 
-# Blocking call that processes network traffic, dispatches callbacks and
-# handles reconnecting.
-# Other loop*() functions are available that give a threaded interface and a
-# manual interface.
-client.loop_forever()
+    client.connect(os.environ.get('MQTT_HOST', "raspberrypi"), 1883, 60)
+
+    global TV_CONTROLLER
+
+    TV_CONTROLLER = TvController(client)
+    TV_CONTROLLER.start()
+
+    # Blocking call that processes network traffic, dispatches callbacks and
+    # handles reconnecting.
+    # Other loop*() functions are available that give a threaded interface and a
+    # manual interface.
+    client.loop_forever()
+
+if __name__ == '__main__':
+    main()

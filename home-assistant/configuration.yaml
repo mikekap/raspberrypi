@@ -21,6 +21,7 @@ switch:
  - platform: mqtt
    name: "Living Room TV"
    command_topic: "home/living/tv/toggle"
+   state_topic: "home/living/tv/status"
 
 mqtt:
   discovery: true
