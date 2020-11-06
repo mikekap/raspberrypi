@@ -64,9 +64,10 @@ class TvController(threading.Thread):
             if elapsed < interval:
                 time.sleep(interval - elapsed)
 
-    def send_ir(self):
-        print('TV Firing IR blaster')
-        subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
+    def send_ir(self, first=False):
+        if not first:
+            print('TV Firing IR blaster')
+            subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
         self.last_ir_send_timestamp = time.time()
 
     def waiting_for_ir_to_complete(self):
@@ -74,7 +75,7 @@ class TvController(threading.Thread):
 
     def maybe_resend_ir_message(self):
         delay = self.on_repeat_delay if self.last_control_message else self.off_repeat_delay
-        if self.last_ir_send_timestamp + delay >= time.time():
+        if self.last_ir_send_timestamp + delay <= time.time():
             self.send_ir()
 
     @thread_loop
@@ -85,7 +86,8 @@ class TvController(threading.Thread):
             if isinstance(item, TvCommand):
                 self.last_control_message = item.up
                 self.last_control_message_timestamp = time.time()
-                self.send_ir()
+                if item.up != self.last_ping_status:
+                    self.send_ir(True)
             elif isinstance(item, TvPingStatus):
                 was_waiting = self.waiting_for_ir_to_complete()
                 was_up = self.last_ping_status
@@ -96,7 +98,7 @@ class TvController(threading.Thread):
                     self.maybe_resend_ir_message()
                 else:
                     if was_waiting:
-                        print(f'Finished waiting for command completion; took {self.last_control_message_timestamp - time.time()}')
+                        print(f'Finished waiting for command completion; took {time.time() - self.last_control_message_timestamp:.2f}')
                     if was_up != self.last_ping_status:
                         print(f'Changed status from {was_up} to {self.last_ping_status}')
                     self.mqtt_client.publish('home/living/tv/status', b'ON' if self.last_ping_status else b'OFF')
