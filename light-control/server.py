@@ -65,9 +65,8 @@ class TvController(threading.Thread):
                 time.sleep(interval - elapsed)
 
     def send_ir(self, first=False):
-        if not first:
-            print('TV Firing IR blaster')
-            subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
+        print('TV Firing IR blaster')
+        subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
         self.last_ir_send_timestamp = time.time()
 
     def waiting_for_ir_to_complete(self):
