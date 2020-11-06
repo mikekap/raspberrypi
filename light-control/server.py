@@ -65,6 +65,7 @@ class TvController(threading.Thread):
                 time.sleep(interval - elapsed)
 
     def send_control(self):
+        print('TV Firing IR blaster')
         subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
         self.last_ir_send_timestamp = time.time()
 
@@ -86,13 +87,17 @@ class TvController(threading.Thread):
                 self.last_control_message_timestamp = time.time()
             elif isinstance(item, TvPingStatus):
                 was_waiting = self.waiting_for_ir_to_complete()
+                was_up = self.last_ping_status
                 self.last_ping_status = item.up
 
                 if self.waiting_for_ir_to_complete():
+                    print('Waiting for IR...', item.up)
                     self.maybe_resend_control_message()
                 else:
                     if was_waiting:
                         print(f'Finished waiting for command completion; took {self.last_control_message_timestamp - time.time()}')
+                    if was_up != self.last_ping_status:
+                        print(f'Changed status from {was_up} to {self.last_ping_status}')
                     self.mqtt_client.publish('home/living/tv/status', b'ON' if self.last_ping_status else b'OFF')
 
             self.q.task_done()
