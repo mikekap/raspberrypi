@@ -20,7 +20,7 @@ def thread_loop(fn):
                 fn(*args, **kwargs)
         except:
             traceback.print_exc()
-            sys.exit(-1)
+            os._exit(1)
     return wrapped
 
 
@@ -60,7 +60,9 @@ class TvController(threading.Thread):
             except queue.Full:
                 pass
 
-            time.sleep(interval - (time.time() - start))
+            elapsed = (time.time() - start)
+            if elapsed < interval:
+                time.sleep(interval - elapsed)
 
     def send_control(self):
         subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
