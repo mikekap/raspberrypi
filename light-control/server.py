@@ -47,21 +47,15 @@ class TvController(threading.Thread):
 
     @thread_loop
     def tv_ping_loop(self):
-        with subprocess.Popen(["ping", "-i", "2", "samsungtv"], stdout=subprocess.PIPE, encoding='utf-8') as proc:
-            proc.stdout.readline()
-            while True:
-                proc.poll()
-                if proc.returncode is not None:
-                    print('Ping crashed, restarting...')
-                    return
-                line = proc.stdout.readline()
-                try:
-                    if 'bytes from samsungtv' in line:
-                        self.q.put_nowait(TvPingStatus(True))
-                    else:
-                        self.q.put_nowait(TvPingStatus(False))
-                except queue.Full:
-                    pass
+        while True:
+            retcode = subprocess.call(["ping", "-W", "2", "-c", "1"])
+            try:
+                if retcode:
+                    self.q.put_nowait(TvPingStatus(False))
+                else:
+                    self.q.put_nowait(TvPingStatus(True))
+            except queue.Full:
+                pass
 
     def send_control(self):
         subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
