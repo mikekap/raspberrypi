@@ -64,7 +64,7 @@ class TvController(threading.Thread):
             if elapsed < interval:
                 time.sleep(interval - elapsed)
 
-    def send_control(self):
+    def send_ir(self):
         print('TV Firing IR blaster')
         subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
         self.last_ir_send_timestamp = time.time()
@@ -72,10 +72,10 @@ class TvController(threading.Thread):
     def waiting_for_ir_to_complete(self):
         return self.last_control_message_timestamp + self.max_repeat_time >= time.time() and self.last_ping_status != self.last_control_message
 
-    def maybe_resend_control_message(self):
+    def maybe_resend_ir_message(self):
         delay = self.on_repeat_delay if self.last_control_message else self.off_repeat_delay
         if self.last_ir_send_timestamp + delay >= time.time():
-            self.send_control()
+            self.send_ir()
 
     @thread_loop
     def run(self):
@@ -85,6 +85,7 @@ class TvController(threading.Thread):
             if isinstance(item, TvCommand):
                 self.last_control_message = item.up
                 self.last_control_message_timestamp = time.time()
+                self.send_ir()
             elif isinstance(item, TvPingStatus):
                 was_waiting = self.waiting_for_ir_to_complete()
                 was_up = self.last_ping_status
@@ -92,7 +93,7 @@ class TvController(threading.Thread):
 
                 if self.waiting_for_ir_to_complete():
                     print('Waiting for IR...', item.up)
-                    self.maybe_resend_control_message()
+                    self.maybe_resend_ir_message()
                 else:
                     if was_waiting:
                         print(f'Finished waiting for command completion; took {self.last_control_message_timestamp - time.time()}')
@@ -111,8 +112,9 @@ TV_CONTROLLER : Optional[TvController] = None
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
 
-    client.subscribe("home/living/light/#")
-    client.subscribe("home/living/tv/#")
+    client.subscribe("home/living/light/toggle")
+    client.subscribe("home/living/light/toggle-night")
+    client.subscribe("home/living/tv/toggle")
 
 
 # The callback for when a PUBLISH message is received from the server.
