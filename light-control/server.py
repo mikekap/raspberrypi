@@ -47,7 +47,10 @@ class TvController(threading.Thread):
 
     @thread_loop
     def tv_ping_loop(self):
+        interval = 2.0
+
         while True:
+            start = time.time()
             retcode = subprocess.call(["ping", "-W", "2", "-c", "1", "samsungtv"])
             try:
                 if retcode:
@@ -56,6 +59,8 @@ class TvController(threading.Thread):
                     self.q.put_nowait(TvPingStatus(True))
             except queue.Full:
                 pass
+
+            time.sleep(interval - (time.time() - start))
 
     def send_control(self):
         subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
