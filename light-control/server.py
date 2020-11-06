@@ -34,7 +34,7 @@ class TvController(threading.Thread):
         self.mqtt_client = mqtt_client
         self.last_control_message = False
         self.last_control_message_timestamp = 0.0
-        self.last_ir_status = False
+        self.last_ping_status = False
         self.last_ir_send_timestamp = 0.0
 
         self.on_repeat_delay = 10
@@ -48,25 +48,27 @@ class TvController(threading.Thread):
     @thread_loop
     def tv_ping_loop(self):
         with subprocess.Popen(["ping", "-i", "2", "samsungtv"], stdout=subprocess.PIPE, encoding='utf-8') as proc:
-            proc.poll()
-            if proc.returncode is not None:
-                print('Ping crashed, restarting...')
-                return
-            line = proc.stdout.readline()
-            try:
-                if 'bytes from samsungtv' in line:
-                    self.q.put_nowait(TvPingStatus(True))
-                else:
-                    self.q.put_nowait(TvPingStatus(False))
-            except queue.Full:
-                pass
+            proc.stdout.readline()
+            while True:
+                proc.poll()
+                if proc.returncode is not None:
+                    print('Ping crashed, restarting...')
+                    return
+                line = proc.stdout.readline()
+                try:
+                    if 'bytes from samsungtv' in line:
+                        self.q.put_nowait(TvPingStatus(True))
+                    else:
+                        self.q.put_nowait(TvPingStatus(False))
+                except queue.Full:
+                    pass
 
     def send_control(self):
         subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
         self.last_ir_send_timestamp = time.time()
 
     def waiting_for_ir_to_complete(self):
-        return self.last_control_message_timestamp + self.max_repeat_time < time.time() and self.last_ir_status != self.last_control_message
+        return self.last_control_message_timestamp + self.max_repeat_time < time.time() and self.last_ping_status != self.last_control_message
 
     def maybe_resend_control_message(self):
         delay = self.on_repeat_delay if self.last_control_message else self.off_repeat_delay
@@ -83,14 +85,14 @@ class TvController(threading.Thread):
                 self.last_control_message_timestamp = time.time()
             elif isinstance(item, TvPingStatus):
                 was_waiting = self.waiting_for_ir_to_complete()
-                self.last_ir_status = item.up
+                self.last_ping_status = item.up
 
                 if self.waiting_for_ir_to_complete():
                     self.maybe_resend_control_message()
                 else:
                     if was_waiting:
                         print(f'Finished waiting for command completion; took {self.last_control_message_timestamp - time.time()}')
-                    self.mqtt_client.publish('home/living/tv/status', b'ON' if self.last_ir_status else b'OFF')
+                    self.mqtt_client.publish('home/living/tv/status', b'ON' if self.last_ping_status else b'OFF')
 
             self.q.task_done()
 
