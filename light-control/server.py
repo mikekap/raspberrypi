@@ -82,11 +82,14 @@ class TvController(threading.Thread):
                 self.last_control_message = item.up
                 self.last_control_message_timestamp = time.time()
             elif isinstance(item, TvPingStatus):
+                was_waiting = self.waiting_for_ir_to_complete()
                 self.last_ir_status = item.up
 
                 if self.waiting_for_ir_to_complete():
                     self.maybe_resend_control_message()
                 else:
+                    if was_waiting:
+                        print(f'Finished waiting for command completion; took ${self.last_control_message_timestamp - time.time()}')
                     self.mqtt_client.publish('home/living/tv/status', b'ON' if self.last_ir_status else b'OFF')
 
             self.q.task_done()
