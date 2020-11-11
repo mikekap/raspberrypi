@@ -6,3 +6,6 @@ services:
     restart: unless-stopped
     devices:
      - "/dev/lirc0:/dev/lirc0"
+     - "/dev/video0:/dev/video0"
+    volumes:
+      - /opt/light-training/photos:/photos

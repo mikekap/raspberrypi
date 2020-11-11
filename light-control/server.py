@@ -10,6 +10,7 @@ import sys
 import traceback
 import threading
 import time
+improt cv2
 
 
 def thread_loop(fn):
@@ -110,11 +111,31 @@ class TvController(threading.Thread):
 
 TV_CONTROLLER : Optional[TvController] = None
 
+
+def take_photo():
+    cap = cv2.VideoCapture(0 + cv2.CAP_V4L)
+    try:
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)
+        cap.set(cv2.CAP_PROP_EXPOSURE, 0.1)
+
+        return cap.read()[1]
+    finally:
+        cap.release()
+
+
+def write_payload_photo_file(type, payload):
+    payload = payload.decode('utf-8').strip()
+    os.makedirs(f'/photos/{type}/{payload}', exist_ok=True)
+    cv2.imwrite(f'/photos/{type}/{payload}/{time.time()}.jpg', take_photo())
+
+
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
 
     client.subscribe("home/living/light/toggle")
     client.subscribe("home/living/light/toggle-night")
+    client.subscribe("home/living/light/record")
+    client.subscribe("home/living/light/record-night")
     client.subscribe("home/living/tv/toggle")
 
 
@@ -127,6 +148,11 @@ def on_message(client, userdata, msg):
         if msg.topic.endswith('/toggle-night'):
             print('power-night', str(msg.payload))
             subprocess.check_call("ir-ctl -S nec:0x405", shell=True)
+        if msg.topic.endswith('/record'):
+            write_payload_photo_file('light', msg.payload)
+        if msg.topic.endswith('/record-night'):
+            write_payload_photo_file('night', msg.payload)
+
     elif msg.topic.startswith('home/living/tv'):
         if msg.topic.endswith('/toggle'):
             print('power-tv', str(msg.payload))
