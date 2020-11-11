@@ -10,7 +10,7 @@ import sys
 import traceback
 import threading
 import time
-improt cv2
+import cv2
 
 
 def thread_loop(fn):
