@@ -2,114 +2,36 @@ import functools
 from typing import Optional
 
 import paho.mqtt.client as mqtt
-import collections
 import os
 import subprocess
-import queue
-import sys
-import traceback
-import threading
 import time
 import cv2
 
-
-def thread_loop(fn):
-    @functools.wraps(fn)
-    def wrapped(*args, **kwargs):
-        try:
-            while True:
-                fn(*args, **kwargs)
-        except:
-            traceback.print_exc()
-            os._exit(1)
-    return wrapped
+from . import controller
 
 
-TvPingStatus = collections.namedtuple('TvPingStatus', "up")
-TvCommand = collections.namedtuple('TvCommand', "up")
-
-class TvController(threading.Thread):
-    def __init__(self, mqtt_client: mqtt.Client):
-        super().__init__(daemon=True)
-        self.q = queue.Queue(100)
-        self.mqtt_client = mqtt_client
-        self.last_control_message = False
-        self.last_control_message_timestamp = 0.0
-        self.last_ping_status = False
-        self.last_ir_send_timestamp = 0.0
-
-        self.on_repeat_delay = 22
-        self.off_repeat_delay = 1
-        self.max_repeat_time = 60
-
-    def start(self):
-        super(TvController, self).start()
-        threading.Thread(target=self.tv_ping_loop, daemon=True).start()
-
-    @thread_loop
-    def tv_ping_loop(self):
-        interval = 2.0
-
-        while True:
-            start = time.time()
-            retcode = subprocess.call(["ping", "-W", "2", "-c", "1", "samsungtv"], stdout=subprocess.DEVNULL)
-            try:
-                if retcode:
-                    self.q.put_nowait(TvPingStatus(False))
-                else:
-                    self.q.put_nowait(TvPingStatus(True))
-            except queue.Full:
-                pass
-
-            elapsed = (time.time() - start)
-            if elapsed < interval:
-                time.sleep(interval - elapsed)
-
-    def send_ir(self, first=False):
-        print('TV Firing IR blaster')
+def make_tv_controller(mqtt_client):
+    def on_off_cmd():
         subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
-        self.last_ir_send_timestamp = time.time()
 
-    def waiting_for_ir_to_complete(self):
-        return self.last_control_message_timestamp + self.max_repeat_time >= time.time() and self.last_ping_status != self.last_control_message
+    def ping_cmd():
+        retcode = subprocess.call(["ping", "-W", "2", "-c", "1", "samsungtv"], stdout=subprocess.DEVNULL)
+        return False if retcode else True
 
-    def maybe_resend_ir_message(self):
-        delay = self.on_repeat_delay if self.last_control_message else self.off_repeat_delay
-        if self.last_ir_send_timestamp + delay <= time.time():
-            self.send_ir()
-
-    @thread_loop
-    def run(self):
-        while True:
-            item = self.q.get()
-
-            if isinstance(item, TvCommand):
-                self.last_control_message = item.up
-                self.last_control_message_timestamp = time.time()
-                if item.up != self.last_ping_status:
-                    self.send_ir(True)
-            elif isinstance(item, TvPingStatus):
-                was_waiting = self.waiting_for_ir_to_complete()
-                was_up = self.last_ping_status
-                self.last_ping_status = item.up
-
-                if self.waiting_for_ir_to_complete():
-                    print('Waiting for IR...', item.up)
-                    self.maybe_resend_ir_message()
-                else:
-                    if was_waiting:
-                        print(f'Finished waiting for command completion; took {time.time() - self.last_control_message_timestamp:.2f}')
-                    if was_up != self.last_ping_status:
-                        print(f'Changed status from {was_up} to {self.last_ping_status}')
-                    self.mqtt_client.publish('home/living/tv/status', b'ON' if self.last_ping_status else b'OFF')
-
-            self.q.task_done()
-
-    def mqtt_message(self, contents):
-        self.q.put(TvCommand(True if b'ON' in contents else False))
+    return controller.LightController(
+        'TV',
+        mqtt_client=mqtt_client,
+        mqtt_status_topic='home/living/tv/status',
+        on_or_off_cmd=on_off_cmd,
+        poll_cmd=ping_cmd,
+        on_repeat_delay=22,
+        off_repeat_delay=1,
+        max_repeat_time=60,
+        poll_interval=2,
+    )
 
 
-TV_CONTROLLER : Optional[TvController] = None
+TV_CONTROLLER : Optional[controller.LightController] = None
 
 
 def take_photo():
@@ -170,7 +92,7 @@ def main():
 
     global TV_CONTROLLER
 
-    TV_CONTROLLER = TvController(client)
+    TV_CONTROLLER = make_tv_controller(client)
     TV_CONTROLLER.start()
 
     # Blocking call that processes network traffic, dispatches callbacks and

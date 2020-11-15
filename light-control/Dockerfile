@@ -6,6 +6,6 @@ ADD requirements.txt /
 RUN python3 -m pip install -r requirements.txt
 
 ADD mikes-light.toml /
-ADD server.py /
+ADD *.py /
 
 CMD ["python3", "-u", "/server.py"]
