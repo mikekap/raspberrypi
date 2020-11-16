@@ -59,7 +59,10 @@ def make_big_light_controller(mqtt_client):
         subprocess.check_call("ir-ctl -S nec:0x404", shell=True)
 
     def poll_cmd():
+        start = time.time()
         photo = take_photo()
+        model_start = time.time()
+
         input_data = np.expand_dims(cv2.cvtColor(photo, cv2.COLOR_BGR2RGB), axis=0)
         if floating_model:
             input_data = input_data.astype('float32')
@@ -67,6 +70,9 @@ def make_big_light_controller(mqtt_client):
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
         prob_on = interpreter.get_tensor(output_details[0]['index'])[0][1]
+
+        end = time.time()
+        print(f'Poll result: {prob_on}: took {model_start - start:.2f} for photo; {end - model_start:.2f} for model')
         if 0.7 <= prob_on <= 0.3:
             filename = f'/photos/big_light_no_conf/{time.time()}.jpg'
             print(f'No confidence in prediction: {prob_on}. Saving file to {filename}.')

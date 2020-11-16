@@ -43,6 +43,7 @@ class LightController(threading.Thread):
         self.on_or_off_cmd = on_or_off_cmd
         self.poll_cmd = poll_cmd
         self.q = queue.Queue(100)
+        self.poll_frequency_queue = queue.Queue(100)
         self.mqtt_client = mqtt_client
         self.mqtt_status_topic = mqtt_status_topic
         self.last_control_message = False
@@ -61,7 +62,6 @@ class LightController(threading.Thread):
 
     @thread_loop
     def poll_loop(self):
-
         while True:
             start = time.time()
             alive = self.poll_cmd()
@@ -71,10 +71,17 @@ class LightController(threading.Thread):
                 except queue.Full:
                     pass
 
-            elapsed = (time.time() - start)
-            interval = 1 if self.waiting_for_ir_to_complete() else self.poll_interval
-            if elapsed < interval:
-                time.sleep(interval - elapsed)
+            while True:
+                elapsed = (time.time() - start)
+                # This is a race. Ehhhh
+                interval = 1 if self.waiting_for_ir_to_complete() else self.poll_interval
+                if elapsed >= interval:
+                    break
+
+                try:
+                    self.poll_frequency_queue.get(timeout=interval - elapsed)
+                except queue.Empty:
+                    pass
 
     def send_ir(self, first=False):
         print(f'{self.name}: Firing IR')
@@ -99,6 +106,10 @@ class LightController(threading.Thread):
                 self.last_control_message_timestamp = time.time()
                 if item.up != self.last_ping_status:
                     self.send_ir(True)
+                    try:
+                        self.poll_frequency_queue.put_nowait(True)
+                    except queue.Full:
+                        pass
             elif isinstance(item, PollStatus):
                 was_waiting = self.waiting_for_ir_to_complete()
                 was_up = self.last_ping_status
