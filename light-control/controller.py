@@ -30,7 +30,7 @@ class LightController(threading.Thread):
     def __init__(self,
                  name,
                  on_or_off_cmd: typing.Callable[[], None],
-                 poll_cmd: typing.Callable[[], bool],
+                 poll_cmd: typing.Callable[[], typing.Optional[bool]],
                  mqtt_client: mqtt.Client,
                  mqtt_status_topic,
                  *,
@@ -61,17 +61,18 @@ class LightController(threading.Thread):
 
     @thread_loop
     def poll_loop(self):
-        interval = self.poll_interval
 
         while True:
             start = time.time()
             alive = self.poll_cmd()
-            try:
-                self.q.put_nowait(PollStatus(alive))
-            except queue.Full:
-                pass
+            if alive is not None:
+                try:
+                    self.q.put_nowait(PollStatus(alive))
+                except queue.Full:
+                    pass
 
             elapsed = (time.time() - start)
+            interval = 1 if self.waiting_for_ir_to_complete() else self.poll_interval
             if elapsed < interval:
                 time.sleep(interval - elapsed)
 

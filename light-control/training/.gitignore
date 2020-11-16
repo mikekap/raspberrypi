@@ -1,0 +1,3 @@
+venv/*
+training/*
+.ipynb_checkpoints/

@@ -6,6 +6,8 @@ import os
 import subprocess
 import time
 import cv2
+import tflite_runtime.interpreter as tflite
+import numpy as np
 
 from . import controller
 
@@ -39,10 +41,57 @@ def take_photo():
     try:
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)
         cap.set(cv2.CAP_PROP_EXPOSURE, 0.1)
-
         return cap.read()[1]
     finally:
         cap.release()
+
+
+def make_big_light_controller(mqtt_client):
+    interpreter = tflite.Interpreter(model_path='biglight_model.tflite')
+    interpreter.allocate_tensors()
+
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    floating_model = (input_details[0]['dtype'] == np.float32)
+
+    def on_off_cmd():
+        subprocess.check_call("ir-ctl -S nec:0x404", shell=True)
+
+    def poll_cmd():
+        photo = take_photo()
+        input_data = np.expand_dims(cv2.cvtColor(photo, cv2.CV_BGR2RGB), axis=0)
+        if floating_model:
+            input_data = input_data.astype('float32')
+
+        interpreter.set_tensor(input_details[0]['index'], input_data)
+        interpreter.invoke()
+        prob_on = interpreter.get_tensor(output_details[0]['index'])[0][1]
+        if 0.7 <= prob_on <= 0.3:
+            filename = f'/photos/big_light_no_conf/{time.time()}.jpg'
+            print(f'No confidence in prediction: {prob_on}. Saving file to {filename}.')
+
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            cv2.imwrite(filename, photo)
+
+            return None
+
+        return prob_on >= 0.5
+
+    return controller.LightController(
+        'Big Light',
+        mqtt_client=mqtt_client,
+        mqtt_status_topic='home/living/light/status',
+        on_or_off_cmd=on_off_cmd,
+        poll_cmd=poll_cmd,
+        on_repeat_delay=3,
+        off_repeat_delay=3,
+        max_repeat_time=10,
+        poll_interval=30,
+    )
+
+
+BIG_LIGHT_CONTROLLER : Optional[controller.LightController] = None
 
 
 def write_payload_photo_file(type, payload):
@@ -66,7 +115,7 @@ def on_message(client, userdata, msg):
     if msg.topic.startswith('home/living/light'):
         if msg.topic.endswith('/toggle'):
             print('power-light', str(msg.payload))
-            subprocess.check_call("ir-ctl -S nec:0x404", shell=True)
+            BIG_LIGHT_CONTROLLER.mqtt_message(msg.payload)
         if msg.topic.endswith('/toggle-night'):
             print('power-night', str(msg.payload))
             subprocess.check_call("ir-ctl -S nec:0x405", shell=True)
@@ -90,10 +139,13 @@ def main():
 
     client.connect(os.environ.get('MQTT_HOST', "raspberrypi"), 1883, 60)
 
-    global TV_CONTROLLER
+    global TV_CONTROLLER, BIG_LIGHT_CONTROLLER
 
     TV_CONTROLLER = make_tv_controller(client)
     TV_CONTROLLER.start()
+
+    BIG_LIGHT_CONTROLLER = make_big_light_controller(client)
+    BIG_LIGHT_CONTROLLER.start()
 
     # Blocking call that processes network traffic, dispatches callbacks and
     # handles reconnecting.
