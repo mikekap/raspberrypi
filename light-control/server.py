@@ -72,7 +72,7 @@ def make_big_light_controller(mqtt_client):
         prob_on = interpreter.get_tensor(output_details[0]['index'])[0][1]
 
         end = time.time()
-        print(f'Poll result: {prob_on}: took {model_start - start:.2f} for photo; {end - model_start:.2f} for model')
+        # print(f'Poll result: {prob_on}: took {model_start - start:.2f} for photo; {end - model_start:.2f} for model')
         if 0.7 <= prob_on <= 0.3:
             filename = f'/photos/big_light_no_conf/{time.time()}.jpg'
             print(f'No confidence in prediction: {prob_on}. Saving file to {filename}.')
