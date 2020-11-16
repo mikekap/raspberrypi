@@ -15,6 +15,7 @@ switch:
  - platform: mqtt
    name: "Living Room Light"
    command_topic: "home/living/light/toggle"
+   state_topic: "home/living/light/status"
  - platform: mqtt
    name: "Living Room Nightlight"
    command_topic: "home/living/light/toggle-night"
