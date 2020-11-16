@@ -60,7 +60,7 @@ def make_big_light_controller(mqtt_client):
 
     def poll_cmd():
         photo = take_photo()
-        input_data = np.expand_dims(cv2.cvtColor(photo, cv2.CV_BGR2RGB), axis=0)
+        input_data = np.expand_dims(cv2.cvtColor(photo, cv2.COLOR_BGR2RGB), axis=0)
         if floating_model:
             input_data = input_data.astype('float32')
 

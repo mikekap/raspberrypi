@@ -7,6 +7,6 @@ RUN python3 -m pip install -r requirements.txt
 
 ADD mikes-light.toml /server/
 ADD *.py /server/
-ADD *.tflite /server/
+ADD *.tflite /
 
 CMD ["python3", "-u", "-m", "server.server"]
