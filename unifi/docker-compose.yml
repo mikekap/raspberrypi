@@ -2,6 +2,7 @@ version: '2.4'
 services:
   mongo:
     image: mongo:3.4
+    command: ["--nojournal"]
     container_name: mongo
     network_mode: host
     restart: unless-stopped
@@ -23,3 +24,4 @@ services:
       DB_URI: mongodb://localhost/unifi
       STATDB_URI: mongodb://localhost/unifi_stat
       DB_NAME: unifi
+      LOGDIR: /dev/shm/

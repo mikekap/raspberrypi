@@ -20,12 +20,6 @@ switch:
    name: "Living Room Nightlight"
    command_topic: "home/living/light/toggle-night"
  - platform: mqtt
-   name: "Living Room Camera"
-   command_topic: "home/living/light/record"
- - platform: mqtt
-   name: "Living Room Night Camera"
-   command_topic: "home/living/light/record-night"
- - platform: mqtt
    name: "Living Room TV"
    command_topic: "home/living/tv/toggle"
    state_topic: "home/living/tv/status"
@@ -36,3 +30,8 @@ mqtt:
 
 alexa:
   smart_home:
+
+# Shove history into ram
+recorder:
+  purge_keep_days: 2
+  db_url: 'sqlite:///:memory:'
