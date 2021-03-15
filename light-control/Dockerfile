@@ -2,6 +2,7 @@ FROM rpi-base
 
 RUN apt install -y v4l-utils iputils-ping python3-opencv --no-install-recommends
 
+ADD tflite_runtime-2.5.0-cp38-cp38-linux_aarch64.whl .
 ADD requirements.txt /
 RUN python3 -m pip install -r requirements.txt
 

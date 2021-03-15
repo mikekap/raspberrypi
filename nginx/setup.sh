@@ -1,7 +1,7 @@
 #!/bin/bash
 set -meo pipefail
 
-sudo mkdir -p /opt/nginx/sites-enabled /etc/docker-compose/nginx /opt/nginx/certbot
+sudo mkdir -p /opt/nginx/sites-enabled /etc/docker-compose/nginx /opt/nginx/certbot /var/www/html/
 sudo cp ./nginx/docker-compose.yml /etc/docker-compose/nginx
 
 sudo cp -f ./nginx/index.html /var/www/html/

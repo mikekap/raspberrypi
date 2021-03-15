@@ -75,7 +75,7 @@ def make_big_light_controller(mqtt_client):
         # print(f'Poll result: {prob_on}: took {model_start - start:.2f} for photo; {end - model_start:.2f} for model')
         if 0.7 <= prob_on <= 0.3:
             filename = f'/photos/big_light_no_conf/{time.time()}.jpg'
-            print(f'No confidence in prediction: {prob_on}. Saving file to {filename}.')
+            # print(f'No confidence in prediction: {prob_on}. Saving file to {filename}.')
 
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             cv2.imwrite(filename, photo)
@@ -120,10 +120,10 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     if msg.topic.startswith('home/living/light'):
         if msg.topic.endswith('/toggle'):
-            print('power-light', str(msg.payload))
+            # print('power-light', str(msg.payload))
             BIG_LIGHT_CONTROLLER.mqtt_message(msg.payload)
         if msg.topic.endswith('/toggle-night'):
-            print('power-night', str(msg.payload))
+            # print('power-night', str(msg.payload))
             subprocess.check_call("ir-ctl -S nec:0x405", shell=True)
         if msg.topic.endswith('/record'):
             write_payload_photo_file('light', msg.payload)
@@ -132,10 +132,10 @@ def on_message(client, userdata, msg):
 
     elif msg.topic.startswith('home/living/tv'):
         if msg.topic.endswith('/toggle'):
-            print('power-tv', str(msg.payload))
+            # print('power-tv', str(msg.payload))
             TV_CONTROLLER.mqtt_message(msg.payload)
 
-    print(msg.topic+" "+str(msg.payload))
+    # print(msg.topic+" "+str(msg.payload))
 
 
 def main():
