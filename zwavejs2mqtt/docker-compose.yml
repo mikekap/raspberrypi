@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  nginx:
+    image: zwavejs/zwavejs2mqtt:latest
+    container_name: zwavejs2mqtt
+    restart: unless-stopped
+    ports:
+      - "8091:8091"
+      - "3000:3000"
+    volumes:
+      - /opt/zwavejs2mqtt/store/:/usr/src/app/store
+    devices:
+      - "/dev/ttyACM0:/dev/ttyACM0"
