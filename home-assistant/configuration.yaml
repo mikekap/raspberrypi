@@ -35,3 +35,49 @@ alexa:
 recorder:
   purge_keep_days: 2
   db_url: 'sqlite:///:memory:'
+
+sensor:
+  - platform: mqtt
+    name: "AirQuality PM2.5 Bedroom"
+    state_topic: "home/bedroom/air_quality"
+    unit_of_measurement: "µg/m³"
+    value_template: "{{ value_json.pm25 }}"
+  - platform: mqtt
+    name: "AirQuality PM10 Bedroom"
+    state_topic: "home/bedroom/air_quality"
+    unit_of_measurement: "µg/m³"
+    value_template: "{{ value_json.pm10 }}"
+  - platform: mqtt
+    name: "AirQuality AQI Bedroom"
+    state_topic: "home/bedroom/air_quality"
+    unit_of_measurement: "AQI"
+    value_template: "{{ value_json.aqi }}"
+
+notify:
+  - name: "Gmail"
+    platform: smtp
+    server: "smtp.gmail.com"
+    port: 587
+    timeout: 15
+    sender: "mike.kaplinskiy+raspberrypi@gmail.com"
+    encryption: starttls
+    username: "mike.kaplinskiy@gmail.com"
+    password: !secret gmail_password
+    recipient:
+      - "mike.kaplinskiy@gmail.com"
+      - "veronica.kaplinskiy@gmail.com"
+    sender_name: "Home Assistant"
+
+  - name: "SMS"
+    platform: smtp
+    server: "smtp.gmail.com"
+    port: 587
+    timeout: 15
+    sender: "mike.kaplinskiy+raspberrypi@gmail.com"
+    encryption: starttls
+    username: "mike.kaplinskiy@gmail.com"
+    password: !secret gmail_password
+    recipient:
+      - !secret mike_phone_email
+      - !secret v_phone_email
+    sender_name: "Home Assistant"
