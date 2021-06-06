@@ -1,0 +1,9 @@
+[Unit]
+Description=PMS5003 Data to MQTT
+
+[Service]
+ExecStart=/usr/bin/python3 /home/pi/raspberrypi/pms5003/server.py
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
