@@ -1,9 +1,11 @@
 [Unit]
 Description=PMS5003 Data to MQTT
+StartLimitInterval=0
 
 [Service]
 ExecStart=/usr/bin/python3 /home/pi/raspberrypi/pms5003/server.py
 Environment=PYTHONUNBUFFERED=1
+RestartSec=15
 
 [Install]
 WantedBy=default.target
