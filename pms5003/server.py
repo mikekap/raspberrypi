@@ -45,9 +45,14 @@ def main():
     client.connect(os.environ.get('MQTT_HOST', "raspberrypi"), 1883, 60)
     client.loop_start()
     try:
+        last_message_time = 0
         while True:
+            if last_message_time + 10 > time.time():
+                PMS_5003.read()
+                continue
+
             publish_pms5003(client)
-            time.sleep(10)
+            last_message_time = time.time()
     finally:
         client.loop_stop()
 
