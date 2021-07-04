@@ -47,6 +47,7 @@ def main():
     try:
         while True:
             publish_pms5003(client)
+            time.sleep(10)
     finally:
         client.loop_stop()
 
