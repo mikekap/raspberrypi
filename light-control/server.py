@@ -26,9 +26,9 @@ def make_tv_controller(mqtt_client):
         mqtt_status_topic='home/living/tv/status',
         on_or_off_cmd=on_off_cmd,
         poll_cmd=ping_cmd,
-        on_repeat_delay=22,
+        on_repeat_delay=300,
         off_repeat_delay=1,
-        max_repeat_time=60,
+        max_repeat_time=300,
         poll_interval=2,
     )
 
