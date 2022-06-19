@@ -1,6 +1,7 @@
 import functools
 from typing import Optional
 
+import broadlink
 import paho.mqtt.client as mqtt
 import os
 import subprocess
@@ -10,11 +11,13 @@ import tflite_runtime.interpreter as tflite
 import numpy as np
 
 from . import controller
+from . import nec_to_broadlink
 
 
-def make_tv_controller(mqtt_client):
+def make_tv_controller(mqtt_client, ir_device):
     def on_off_cmd():
-        subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
+        ir_device.send_data(nec_to_broadlink.necx_to_broadlink(0x70702))
+        #subprocess.check_call('ir-ctl -S necx:0x70702 -S necx:0x70702 -S necx:0x70702', shell=True)
 
     def ping_cmd():
         retcode = subprocess.call(["ping", "-W", "2", "-c", "1", "samsungtv"], stdout=subprocess.DEVNULL)
@@ -56,7 +59,8 @@ def make_big_light_controller(mqtt_client):
     floating_model = (input_details[0]['dtype'] == np.float32)
 
     def on_off_cmd():
-        subprocess.check_call("ir-ctl -S nec:0x404", shell=True)
+        ir_device.send_data(nec_to_broadlink.nec_to_broadlink(0x404))
+        #subprocess.check_call("ir-ctl -S nec:0x404", shell=True)
 
     def poll_cmd():
         start = time.time()
@@ -139,6 +143,9 @@ def on_message(client, userdata, msg):
 
 
 def main():
+    ir_device = broadlink.hello('broadlink')
+    ir_device.auth()
+
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
@@ -147,10 +154,10 @@ def main():
 
     global TV_CONTROLLER, BIG_LIGHT_CONTROLLER
 
-    TV_CONTROLLER = make_tv_controller(client)
+    TV_CONTROLLER = make_tv_controller(client, ir_device)
     TV_CONTROLLER.start()
 
-    BIG_LIGHT_CONTROLLER = make_big_light_controller(client)
+    BIG_LIGHT_CONTROLLER = make_big_light_controller(client, ir_device)
     BIG_LIGHT_CONTROLLER.start()
 
     # Blocking call that processes network traffic, dispatches callbacks and
