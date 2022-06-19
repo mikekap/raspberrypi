@@ -14,6 +14,10 @@ from . import controller
 from . import nec_to_broadlink
 
 
+# Hack
+broadlink.SUPPORTED_TYPES[broadlink.remote.rm4mini].setdefault(0x520d, ('RM4 Mini', 'Broadlink'))
+
+
 def make_tv_controller(mqtt_client, ir_device):
     def on_off_cmd():
         ir_device.send_data(nec_to_broadlink.necx_to_broadlink(0x70702))
@@ -49,7 +53,7 @@ def take_photo():
         cap.release()
 
 
-def make_big_light_controller(mqtt_client):
+def make_big_light_controller(mqtt_client, ir_device):
     interpreter = tflite.Interpreter(model_path='biglight_model.tflite')
     interpreter.allocate_tensors()
 
