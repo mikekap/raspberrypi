@@ -2,11 +2,6 @@
 # Configure a default setup of Home Assistant (frontend, api, etc)
 default_config:
 
-http:
-  use_x_forwarded_for: true
-  trusted_proxies: 
-   - 0.0.0.0/1
-   - 1.0.0.0/1
 
 # Text to speech
 tts:
@@ -17,25 +12,33 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
-switch:
- - platform: mqtt
-   unique_id: living_room_light
-   name: "Living Room Light"
-   command_topic: "home/living/light/toggle"
-   state_topic: "home/living/light/status"
- - platform: mqtt
-   unique_id: living_room_nightlight
-   name: "Living Room Nightlight"
-   command_topic: "home/living/light/toggle-night"
- - platform: mqtt
-   unique_id: living_room_tv
-   name: "Living Room TV"
-   command_topic: "home/living/tv/toggle"
-   state_topic: "home/living/tv/status"
-
 mqtt:
-  discovery: true
-  broker: raspberrypi
+  switch:
+   - unique_id: living_room_light
+     name: "Living Room Light"
+     command_topic: "home/living/light/toggle"
+     state_topic: "home/living/light/status"
+   - unique_id: living_room_nightlight
+     name: "Living Room Nightlight"
+     command_topic: "home/living/light/toggle-night"
+   - unique_id: living_room_tv
+     name: "Living Room TV"
+     command_topic: "home/living/tv/toggle"
+     state_topic: "home/living/tv/status"
+
+  sensor:
+    - name: "AirQuality PM2.5 Bedroom"
+      state_topic: "home/bedroom/air_quality"
+      unit_of_measurement: "µg/m³"
+      value_template: "{{ value_json.pm25 }}"
+    - name: "AirQuality PM10 Bedroom"
+      state_topic: "home/bedroom/air_quality"
+      unit_of_measurement: "µg/m³"
+      value_template: "{{ value_json.pm10 }}"
+    - name: "AirQuality AQI Bedroom"
+      state_topic: "home/bedroom/air_quality"
+      unit_of_measurement: "AQI"
+      value_template: "{{ value_json.aqi }}"
 
 alexa:
   smart_home:
@@ -43,24 +46,7 @@ alexa:
 # Shove history into ram
 recorder:
   purge_keep_days: 2
-  db_url: 'sqlite:///:memory:'
-
-sensor:
-  - platform: mqtt
-    name: "AirQuality PM2.5 Bedroom"
-    state_topic: "home/bedroom/air_quality"
-    unit_of_measurement: "µg/m³"
-    value_template: "{{ value_json.pm25 }}"
-  - platform: mqtt
-    name: "AirQuality PM10 Bedroom"
-    state_topic: "home/bedroom/air_quality"
-    unit_of_measurement: "µg/m³"
-    value_template: "{{ value_json.pm10 }}"
-  - platform: mqtt
-    name: "AirQuality AQI Bedroom"
-    state_topic: "home/bedroom/air_quality"
-    unit_of_measurement: "AQI"
-    value_template: "{{ value_json.aqi }}"
+  commit_interval: 86400
 
 notify:
   - name: "Gmail"
