@@ -7,5 +7,7 @@ services:
     devices:
      - "/dev/lirc0:/dev/lirc0"
      - "/dev/video0:/dev/video0"
+    privileged: true
     volumes:
       - /opt/light-training/photos:/photos
+      - /var/run/dbus/:/var/run/dbus/:z

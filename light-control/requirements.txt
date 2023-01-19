@@ -2,3 +2,4 @@ numpy==1.22
 paho-mqtt
 ./tflite_runtime-2.10.0-cp310-cp310-linux_aarch64.whl ; sys_platform == "linux"
 broadlink
+gatt

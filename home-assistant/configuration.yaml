@@ -2,6 +2,12 @@
 # Configure a default setup of Home Assistant (frontend, api, etc)
 default_config:
 
+http:
+  use_x_forwarded_for: true
+  trusted_proxies: 
+   - 0.0.0.0/1
+   - 1.0.0.0/1
+
 # Text to speech
 tts:
   - platform: google_translate
@@ -13,13 +19,16 @@ scene: !include scenes.yaml
 
 switch:
  - platform: mqtt
+   unique_id: living_room_light
    name: "Living Room Light"
    command_topic: "home/living/light/toggle"
    state_topic: "home/living/light/status"
  - platform: mqtt
+   unique_id: living_room_nightlight
    name: "Living Room Nightlight"
    command_topic: "home/living/light/toggle-night"
  - platform: mqtt
+   unique_id: living_room_tv
    name: "Living Room TV"
    command_topic: "home/living/tv/toggle"
    state_topic: "home/living/tv/status"
@@ -81,3 +90,4 @@ notify:
       - !secret mike_phone_email
       - !secret v_phone_email
     sender_name: "Home Assistant"
+

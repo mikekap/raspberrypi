@@ -1,6 +1,6 @@
 FROM rpi-base
 
-RUN apt install -y v4l-utils iputils-ping python3-opencv --no-install-recommends
+RUN apt update && apt install -y v4l-utils iputils-ping python3-opencv python3-dbus python3-gi --no-install-recommends
 
 ADD tflite_runtime*.whl .
 ADD requirements.txt /
