@@ -98,8 +98,8 @@ def make_big_light_controller(mqtt_client, ir_device):
         mqtt_status_topic='home/living/light/status',
         on_or_off_cmd=on_off_cmd,
         poll_cmd=poll_cmd,
-        on_repeat_delay=3,
-        off_repeat_delay=3,
+        on_repeat_delay=5,
+        off_repeat_delay=5,
         max_repeat_time=10,
         poll_interval=30,
     )
