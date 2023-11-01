@@ -18,13 +18,6 @@ scene: !include scenes.yaml
 
 mqtt:
   switch:
-   - unique_id: living_room_light
-     name: "Living Room Light"
-     command_topic: "home/living/light/toggle"
-     state_topic: "home/living/light/status"
-   - unique_id: living_room_nightlight
-     name: "Living Room Nightlight"
-     command_topic: "home/living/light/toggle-night"
    - unique_id: living_room_tv
      name: "Living Room TV"
      command_topic: "home/living/tv/toggle"
