@@ -1,0 +1,50 @@
+permit_join: true
+homeassistant: true
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://raspberrypi
+serial:
+  port: /dev/ttyACM0
+  adapter: ezsp
+frontend:
+  port: 8080
+advanced:
+  network_key:
+    - 149
+    - 146
+    - 213
+    - 129
+    - 203
+    - 152
+    - 230
+    - 87
+    - 240
+    - 16
+    - 61
+    - 59
+    - 140
+    - 45
+    - 163
+    - 242
+  homeassistant_legacy_entity_attributes: false
+  legacy_api: false
+  legacy_availability_payload: false
+device_options:
+  legacy: false
+devices:
+  '0xb43a31fffe340191':
+    friendly_name: Living Room Lights
+  '0xb43a31fffe34212e':
+    friendly_name: Living Room Lights Blank
+  '0xb43a31fffe2f4686':
+    friendly_name: Porch Light
+  '0xb43a31fffe33f9a9':
+    friendly_name: Hallway Lights
+  '0x6c5cb1fffe5e67e8':
+    friendly_name: Office Light
+groups:
+  '1':
+    friendly_name: living_room_lights
+    devices:
+      - 0xb43a31fffe340191/1
+      - 0xb43a31fffe34212e/1

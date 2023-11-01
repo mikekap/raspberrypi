@@ -3,6 +3,7 @@ set -meo pipefail
 
 sudo mkdir -p /opt/zigbee2mqtt/store/ /etc/docker-compose/zigbee2mqtt
 sudo cp ./zigbee2mqtt/docker-compose.yml /etc/docker-compose/zigbee2mqtt
+sudo cp ./zigbee2mqtt/configuration.yaml /opt/zigbee2mqtt/store/configuration.yaml
 
 sudo systemctl daemon-reload
 sudo systemctl start docker-compose@zigbee2mqtt
