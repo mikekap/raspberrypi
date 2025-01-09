@@ -7,7 +7,7 @@ RUN apt-get update && \
     apt install -y --no-install-recommends wget gnupg ca-certificates && \
     echo "deb https://packages.adoptium.net/artifactory/deb $VERSION_CODENAME main" >> /etc/apt/sources.list && \
     (wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | apt-key add -) && \
-    echo 'deb [arch=armhf] https://www.ui.com/downloads/unifi/debian stable ubiquiti' >> /etc/apt/sources.list && \
+    echo 'deb [arch=arm64] https://www.ui.com/downloads/unifi/debian stable ubiquiti' >> /etc/apt/sources.list && \
     wget -O /etc/apt/trusted.gpg.d/unifi-repo.gpg https://dl.ui.com/unifi/unifi-repo.gpg && \
     apt update
 
