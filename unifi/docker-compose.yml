@@ -1,7 +1,7 @@
 version: '2.4'
 services:
   mongo:
-    image: mongo:3.4
+    image: mongo:4.2.22
     command: ["--nojournal"]
     container_name: mongo
     network_mode: host
@@ -19,9 +19,12 @@ services:
     network_mode: host
     restart: unless-stopped
     volumes:
-      - /opt/unifi:/unifi/
+      - /opt/unifi/:/unifi
     environment:
       DB_URI: mongodb://localhost/unifi
       STATDB_URI: mongodb://localhost/unifi_stat
       DB_NAME: unifi
       LOGDIR: /dev/shm/
+      UNIFI_HTTP_PORT: 8181
+      RUNAS_UID0: "true"
+      JVM_EXTRA_OPTS: "-Dunifi.http.port=8181"

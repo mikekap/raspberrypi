@@ -7,9 +7,45 @@ log() {
     echo "$(date +"[%Y-%m-%d %T,%3N]") <docker-entrypoint> $*"
 }
 
+set_java_home() {
+    JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:/jre/bin/java::")
+    if [ ! -d "${JAVA_HOME}" ]; then
+        # For some reason readlink failed so lets just make some assumptions instead
+        # We're assuming openjdk 8 since thats what we install in Dockerfile
+        arch=`dpkg --print-architecture 2>/dev/null`
+        JAVA_HOME=/usr/lib/jvm/java-17-openjdk-${arch}
+    fi
+}
+
+instPkg() {
+    for pkg in $*; do
+        if [ $(dpkg-query -W -f='${Status}' "${pkg}" 2>/dev/null | grep -c "ok installed") -eq 0 ];
+        then
+            apt-get -qy install "${pkg}";
+        fi
+    done
+}
+
+# Validate that any included hotfixes have been applied
+validate() (
+  shopt -s nullglob
+  for i in /usr/local/unifi/hotfixes/*-validate.md5sum; do
+    md5sum -c "$i" > /dev/null 2>&1 || return 1
+    echo "Hotfix validated: $(basename ${i::-16})"
+  done
+)
+
+
+# Check that any included hotfixes have been properly applied and exit if not
+if ! validate; then
+  echo "Missing an included hotfix"
+  exit 1
+fi
+
+
 exit_handler() {
     log "Exit signal received, shutting down"
-    java -cp /usr/share/java/javax.activation.jar:${BASEDIR}/lib/ace.jar com.ubnt.ace.Launcher stop
+    java -jar ${BASEDIR}/lib/ace.jar stop
     for i in `seq 1 10` ; do
         [ -z "$(pgrep -f ${BASEDIR}/lib/ace.jar)" ] && break
         # graceful shutdown
@@ -27,20 +63,18 @@ exit_handler() {
 
 trap 'kill ${!}; exit_handler' SIGHUP SIGINT SIGQUIT SIGTERM
 
+[ "x${JAVA_HOME}" != "x" ] || set_java_home
+
+
 # vars similar to those found in unifi.init
-RUNAS_UID0=true
 MONGOPORT=27117
-BASEDIR=/usr/lib/unifi/
 
 CODEPATH=${BASEDIR}
 DATALINK=${BASEDIR}/data
 LOGLINK=${BASEDIR}/logs
 RUNLINK=${BASEDIR}/run
-DATADIR=${DATADIR:-/unifi/data}
-LOGDIR=${LOGDIR:-/usr/lib/unifi/logs}
-CERTDIR=${CERTDIR:-/unifi/cert}
-RUNDIR=${RUNDIR:-/var/run/unifi}
 
+rm $DATALINK
 ln -sf $DATADIR $DATALINK
 
 DIRS="${RUNDIR} ${LOGDIR} ${DATADIR} ${BASEDIR}"
@@ -54,7 +88,7 @@ JVM_MAX_HEAP_SIZE=${JVM_MAX_HEAP_SIZE:-1024M}
 
 
 MONGOLOCK="${DATAPATH}/db/mongod.lock"
-JVM_EXTRA_OPTS="${JVM_EXTRA_OPTS} -Dunifi.datadir=${DATADIR} -Dunifi.logdir=${LOGDIR} -Dunifi.rundir=${RUNDIR}"
+JVM_EXTRA_OPTS="${JVM_EXTRA_OPTS} --add-opens=java.base/java.time=ALL-UNNAMED -Dunifi.datadir=${DATADIR} -Dunifi.logdir=${LOGDIR} -Dunifi.rundir=${RUNDIR}"
 PIDFILE=/var/run/unifi/unifi.pid
 
 if [ ! -z "${JVM_MAX_HEAP_SIZE}" ]; then
@@ -83,6 +117,7 @@ fi
 if [ -d "/usr/unifi/init.d" ]; then
     run-parts /usr/unifi/init.d
 fi
+
 if [ -d "/unifi/init.d" ]; then
     run-parts "/unifi/init.d"
 fi
@@ -124,6 +159,9 @@ if ! [[ -z "$LOTSOFDEVICES" ]]; then
   settings["unifi.G1GC.enabled"]="true"
   settings["unifi.xms"]="$(h2mb $JVM_INIT_HEAP_SIZE)"
   settings["unifi.xmx"]="$(h2mb ${JVM_MAX_HEAP_SIZE:-1024M})"
+  # Reduce MongoDB I/O (issue #300)
+  settings["unifi.db.nojournal"]="true"
+  settings["unifi.db.extraargs"]="--quiet"
 fi
 
 # Implements issue #30
@@ -134,6 +172,14 @@ if ! [[ -z "$DB_URI" || -z "$STATDB_URI" || -z "$DB_NAME" ]]; then
   settings["unifi.db.name"]="$DB_NAME"
 fi
 
+if ! [[ -z "$PORTAL_HTTP_PORT"  ]]; then
+  settings["portal.http.port"]="$PORTAL_HTTP_PORT"
+fi
+
+if ! [[ -z "$PORTAL_HTTPS_PORT"  ]]; then
+  settings["portal.https.port"]="$PORTAL_HTTPS_PORT"
+fi
+
 if ! [[ -z "$UNIFI_HTTP_PORT"  ]]; then
   settings["unifi.http.port"]="$UNIFI_HTTP_PORT"
 fi
@@ -142,15 +188,24 @@ if ! [[ -z "$UNIFI_HTTPS_PORT"  ]]; then
   settings["unifi.https.port"]="$UNIFI_HTTPS_PORT"
 fi
 
-for key in "${!settings[@]}"; do
-  confSet "$confFile" "$key" "${settings[$key]}"
-done
-UNIFI_CMD="java ${JVM_OPTS} -cp /usr/share/java/javax.activation.jar:${BASEDIR}/lib/ace.jar com.ubnt.ace.Launcher start"
+if [[ "$UNIFI_ECC_CERT" == "true" ]]; then
+  settings["unifi.https.sslEnabledProtocols"]="TLSv1.2"
+  settings["unifi.https.ciphers"]="TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"
+fi
+
+if [[ "$UNIFI_STDOUT" == "true" ]]; then
+  settings["unifi.logStdout"]="true"
+fi
+
+UNIFI_CMD="java ${JVM_OPTS} -jar ${BASEDIR}/lib/ace.jar start"
+
+if [ "$EUID" -ne 0 ] && command -v permset &> /dev/null
+then
+  permset
+fi
 
 # controller writes to relative path logs/server.log
 cd ${BASEDIR}
-mkdir -p ${LOGDIR}
-touch ${LOGDIR}/server.log
 
 CUID=$(id -u)
 
@@ -165,15 +220,18 @@ if [[ "${@}" == "unifi" ]]; then
             mkdir -p "${dir}"
         fi
     done
+    for key in "${!settings[@]}"; do
+      confSet "$confFile" "$key" "${settings[$key]}"
+    done
     if [ "${RUNAS_UID0}" == "true" ] || [ "${CUID}" != "0" ]; then
         if [ "${CUID}" == 0 ]; then
             log 'WARNING: Running UniFi in insecure (root) mode'
         fi
+        echo ${UNIFI_CMD}
         ${UNIFI_CMD} &
-        WAIT_PID="$!"
     elif [ "${RUNAS_UID0}" == "false" ]; then
         if [ "${BIND_PRIV}" == "true" ]; then
-            if setcap 'cap_net_bind_service=+ep' "${JAVA_HOME}/jre/bin/java"; then
+            if setcap 'cap_net_bind_service=+ep' "${JAVA_HOME}/bin/java"; then
                 sleep 1
             else
                 log "ERROR: setcap failed, can not continue"
@@ -193,10 +251,8 @@ if [[ "${@}" == "unifi" ]]; then
             fi
         done
         gosu unifi:unifi ${UNIFI_CMD} &
-        WAIT_PID="$!"
     fi
-    tail -f ${LOGDIR}/server.log &
-    wait $WAIT_PID
+    wait
     log "WARN: unifi service process ended without being signaled? Check for errors in ${LOGDIR}." >&2
 else
     log "Executing: ${@}"
